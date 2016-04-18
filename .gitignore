@@ -15,9 +15,12 @@
 *.moc.cpp
 *.z
 *.exe
+.tags
+.tags_sorted_by_file
 proxmark
 proxmark3
 flasher
+fpga_compress
 version.c
 lua
 luac

