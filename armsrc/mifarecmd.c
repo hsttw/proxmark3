@@ -931,7 +931,7 @@ int saMifareChkKeys(uint8_t blockNo, uint8_t keyType, bool clearTrace, uint8_t k
 
 			if(!iso14443a_select_card(uid, NULL, &cuid)) {
 				if (OLD_MF_DBGLEVEL >= 1)	Dbprintf("ChkKeys: Can't select card");
-				isOK = -1;
+				isOK = -2;
 				LED(LED_RED, 50);
 				break;
 			};

@@ -1031,14 +1031,18 @@ void MattyRun()
 		Finally, it may be dumped into a blank card.
 
 		This source code has been tested only in Mifare 1k.
+
+		If you're using the FPGA connected to a device that has an OS, and you're not using the proxmark3 client or to see the debug
+		messages, you might want to uncomment usb_disable().
 	*/
 
     StandAloneMode();
-    // FpgaDownloadAndGo(FPGA_BITSTREAM_HF);
+    FpgaDownloadAndGo(FPGA_BITSTREAM_HF);
+    // usb_disable(); // Comment this line if you want to see debug messages.
+
 
     /*
 		Pseudo-configuration block.
-
     */
 	char keyTypec = '?'; // 'A'/'B' or both keys '?'
 	bool printKeys = false; // Prints keys
@@ -1046,6 +1050,7 @@ void MattyRun()
 	bool ecfill = true; // Fill emulator memory with cards content.
 	bool simulation = true; // Simulates an exact copy of the target tag
 	bool fillFromEmulator = false;
+	bool keyFound = false;
 
 	uint16_t mifare_size = 1024; // Mifare 1k (only 1k supported for now)
 	uint8_t sectorSize = 64; // 1k's sector size is 64 bytes.
@@ -1140,6 +1145,7 @@ void MattyRun()
 	int key = -1;
 	int block = 0;
 	bool err = 0;
+	bool allKeysFound = true;
 	uint32_t size = mfKeysCnt;
 	for (int type = !keyType; type < 2 && !err; keyType == 2 ? (type++) : (type = 2)) {
 		block = blockNo;
@@ -1147,12 +1153,17 @@ void MattyRun()
 			Dbprintf("\tCurrent sector:%3d, block:%3d, key type: %c, key count: %i ", sec, block, type ? 'B':'A', mfKeysCnt);
 			key = saMifareChkKeys(block, type, true, size, &keyBlock[0], &key64);
 			if (key == -1) {
-				Dbprintf("\t✕ Key error, stopping.");
-				err = 1;
+				LED(LED_RED, 50); //red
+				Dbprintf("\t✕ Key not found for this sector!");
+				allKeysFound = false;
+				// break;
+			} else if (key == -2) {
+				err = 1; // Can't select card.
 				break;
 			} else {
 				num_to_bytes(key64, 6, foundKey[type][sec]);
 				validKey[type][sec] = true;
+				keyFound = true;
 				Dbprintf("\t✓ Found valid key: [%02x%02x%02x%02x%02x%02x]\n", (keyBlock + 6*key)[0],(keyBlock + 6*key)[1], (keyBlock + 6*key)[2],(keyBlock + 6*key)[3], (keyBlock + 6*key)[4], (keyBlock + 6*key)[5], 6);
 			}
 		block < 127 ? (block += 4) : (block += 16);
@@ -1165,8 +1176,13 @@ void MattyRun()
 
 		If at least one key was found, start a nested attack based on that key, and continue.
 	*/
-	if (err) {
+	if (!allKeysFound && keyFound) {
 		Dbprintf("\t✕ There's currently no nested attack in MattyRun, sorry!");
+		LED_C_ON(); //red
+		LED_A_ON(); //yellow
+		allKeysFound = true;
+	} else {
+		Dbprintf("\t✕ There's nothing I can do without at least a one valid key, sorry!");
 		LED_C_ON(); //red
 	}
 
@@ -1174,7 +1190,7 @@ void MattyRun()
 	/*
 		If enabled, transfers found keys to memory and loads target content in emulator memory. Then it simulates to be the tag it has basically cloned.
 	*/
-	if ((transferToEml) && (!err)) {
+	if ((transferToEml) && (allKeysFound)) {
 		emlClearMem();
 		uint8_t mblock[16];
 		for (uint16_t sectorNo = 0; sectorNo < sectorsCnt; sectorNo++) {
