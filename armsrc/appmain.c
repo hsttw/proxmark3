@@ -993,7 +993,7 @@ void  __attribute__((noreturn)) AppMain(void)
 	}
 }
 
-#if defined(WITH_ISO14443a_StandAlone) || defined(WITH_LF)
+#if defined(WITH_ISO14443a_StandAlone) || defined(WITH_HF)
 
 #define OPTS 2
 
@@ -1024,16 +1024,16 @@ void MattyRun()
 {
 	/*
 		It will check if the keys from the attacked tag are a subset from
-		the hardcoded set of keys inside of the FPGA. If this is the case
+		the hardcoded set of keys inside of the ARM. If this is the case
 		then it will load the keys into the emulator memory and also the
 		content of the victim tag, to finally simulate it.
 
-		Finally, it may be dumped into a blank card.
+		Alternatively, it can be dumped into a blank card.
 
 		This source code has been tested only in Mifare 1k.
 
-		If you're using the FPGA connected to a device that has an OS, and you're not using the proxmark3 client or to see the debug
-		messages, you might want to uncomment usb_disable().
+		If you're using the proxmark connected to a device that has an OS, and you're not using the proxmark3 client to see the debug
+		messages, you MUST uncomment usb_disable().
 	*/
 
     StandAloneMode();
@@ -1049,8 +1049,8 @@ void MattyRun()
 	bool transferToEml = true; // Transfer keys to emulator memory
 	bool ecfill = true; // Fill emulator memory with cards content.
 	bool simulation = true; // Simulates an exact copy of the target tag
-	bool fillFromEmulator = false;
-	bool keyFound = false;
+	bool fillFromEmulator = false; // Dump emulator memory.
+
 
 	uint16_t mifare_size = 1024; // Mifare 1k (only 1k supported for now)
 	uint8_t sectorSize = 64; // 1k's sector size is 64 bytes.
@@ -1061,6 +1061,7 @@ void MattyRun()
 	uint8_t *keyBlock = NULL; // Where the keys will be held in memory.
 	uint8_t stKeyBlock = 20; // Set the quantity of keys in the block.
 	uint8_t filled = 0; // Used to check if the memory was filled with success.
+	bool keyFound = false;
 
 	/*
 		Set of keys to be used.
@@ -1180,7 +1181,8 @@ void MattyRun()
 		Dbprintf("\t✕ There's currently no nested attack in MattyRun, sorry!");
 		LED_C_ON(); //red
 		LED_A_ON(); //yellow
-		allKeysFound = true;
+		// Do nested attack, set allKeysFound = true;
+		// allKeysFound = true;
 	} else {
 		Dbprintf("\t✕ There's nothing I can do without at least a one valid key, sorry!");
 		LED_C_ON(); //red
@@ -1207,11 +1209,14 @@ void MattyRun()
 		Dbprintf("\t✓ Found keys have been transferred to the emulator memory.");
 		if (ecfill) {
 			Dbprintf("\tFilling in with key A.");
-			// SpinDelay(500);
 			MifareECardLoad(sectorsCnt, 0, 0, &filled);
 			if (filled != 1) {
-				Dbprintf("\tRetrying with key B.");
-				MifareECardLoad(sectorsCnt, 1, 0, &filled);
+				Dbprintf("\t✕ Failed filling with A.");
+			}
+			Dbprintf("\tFilling in with key B.");
+			MifareECardLoad(sectorsCnt, 1, 0, &filled);
+			if (filled != 1) {
+				Dbprintf("\t✕ Failed filling with B.");
 			}
 			if ((filled == 1) && simulation) {
 				Dbprintf("\t✓ Filled, simulation started.");
@@ -1225,9 +1230,12 @@ void MattyRun()
 					Needs further testing.
 				*/
 				if (fillFromEmulator) {
+					uint8_t retry = 5, cnt;
+					Dbprintf("\t Trying to dump into blank card.");
 					int flags = 0;
 					LED_A_ON(); //yellow
 					for (int blockNum = 0; blockNum < 16 * 4; blockNum += 1) {
+						cnt = 0;
 						emlGetMem(mblock, blockNum, 1);
 						// switch on field and send magic sequence
 						if (blockNum == 0) flags = 0x08 + 0x02;
@@ -1238,10 +1246,22 @@ void MattyRun()
 						// Done. Magic Halt and switch off field.
 						if (blockNum == 16 * 4 - 1) flags = 0x04 + 0x10;
 
-						saMifareCSetBlock(0, flags & 0xFE, blockNum, mblock);
+						while (!saMifareCSetBlock(0, flags & 0xFE, blockNum, mblock) && cnt <= retry) {
+							cnt++;
+							Dbprintf("\t! Could not write block. Retrying.");
+						}
+						if (cnt == retry) {
+							Dbprintf("\t✕ Retries failed. Aborting.");
+							break;
+						}
 					}
 
-					LED_B_ON(); //green
+					if (!err) {
+						LED_B_ON();
+					} else {
+						LED_C_ON();
+					}
+
 				}
 			} else if (filled != 1) {
 				Dbprintf("\t✕ Memory could not be filled due to errors.");

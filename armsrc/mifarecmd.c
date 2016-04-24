@@ -1092,7 +1092,7 @@ void MifareECardLoad(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint8_t *datai
 // Matt's StandAlone mod.
 // Work with "magic Chinese" card (email him: ouyangweidaxian@live.cn)
 //-----------------------------------------------------------------------------
-void saMifareCSetBlock(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint8_t *datain){
+int saMifareCSetBlock(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint8_t *datain){
 
   // params
 	uint8_t needWipe = arg0;
@@ -1204,14 +1204,13 @@ void saMifareCSetBlock(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint8_t *dat
 		break;
 	}
 
-	LED_B_ON();
-	// cmd_send(CMD_ACK,isOK,0,0,uid,4);
-	LED_B_OFF();
-
 	if ((workFlags & 0x10) || (!isOK)) {
 		FpgaWriteConfWord(FPGA_MAJOR_MODE_OFF);
 		LEDsoff();
 	}
+
+	return isOK;
+
 }
 
 //-----------------------------------------------------------------------------
