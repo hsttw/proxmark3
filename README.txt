@@ -1,7 +1,7 @@
 Unofficial proxmark3 repository. This is just a fork with slightly
 modifications for educational purposes only.
 
-I've personally recoded the image of the FPGA in order to automate
+I've personally recoded the image of the ARM in order to automate
 the attack and simulation on Mifare cards. I've moved some of the
 implementation on the client side, such as chk, ecfill, sim. 
 
@@ -9,7 +9,8 @@ What it does now:
 It will check if the keys from the attacked tag are a subset from
 the hardcoded set of keys inside of the FPGA. If this is the case
 then it will load the keys into the emulator memory and also the
-content of the victim tag, to finally simulate it.
+content of the victim tag, to finally simulate it and make a clone
+on a blank card.
 
 TODO:
 - Nested attack in the case not all keys are known.
